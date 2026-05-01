@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sugar Rush Snake 🐍</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #06010f;
+    --panel: #0d0222;
+    --border: #1e0a38;
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --candy1: #f472b6;
+    --candy2: #facc15;
+    --candy3: #34d399;
+    --text: #e9d5ff;
+    --muted: #4c1d95;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 400px; padding: 0 12px; }
+  .screen.active { display: flex; }
+
+  /* ── SELECT SCREEN ── */
+  #selectScreen { gap: 10px; }
+
+  .game-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 32px;
+    background: linear-gradient(135deg, #f472b6, #facc15, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 0 20px #f472b680);
+  }
+
+  .game-sub { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-align: center; margin-bottom: 6px; }
+
+  .species-carousel { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 4px 0 6px; scrollbar-width: none; }
+  .species-carousel::-webkit-scrollbar { display: none; }
+
+  .sp-thumb {
+    flex: 0 0 64px; height: 64px; border-radius: 14px;
+    border: 2px solid var(--border); background: var(--panel);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .15s; position: relative; overflow: hidden;
+  }
+  .sp-thumb.active { border-color: var(--purple-light); transform: scale(1.1); }
+  .sp-thumb img { width: 56px; height: 56px; object-fit: contain; }
+  .sp-thumb .sp-emoji { font-size: 28px; }
+
+  .selected-preview {
+    width: 100%; background: var(--panel); border-radius: 18px;
+    border: 1px solid var(--border); padding: 12px;
+    display: flex; gap: 12px; align-items: center;
+  }
+  .preview-img { width: 90px; height: 90px; object-fit: contain; flex-shrink: 0; }
+  .preview-info { flex: 1; }
+  .preview-name { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--text); }
+  .preview-arch { color: var(--muted); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .mini-stat label { color: var(--muted); font-size: 8px; display: block; margin-bottom: 1px; }
+  .mini-bar { height: 3px; background: #1e0a38; border-radius: 2px; }
+  .mini-fill { height: 3px; border-radius: 2px; }
+
+  .name-row { display: flex; gap: 8px; width: 100%; }
+  .name-input {
+    flex: 1; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 14px;
+    padding: 9px 12px; outline: none; font-family: 'Nunito', sans-serif;
+  }
+  .name-input::placeholder { color: var(--muted); }
+
+  .play-btn {
+    width: 100%; padding: 13px; border: none; border-radius: 14px;
+    font-family: 'Fredoka One', cursive; font-size: 20px;
+    background: linear-gradient(135deg, #7c3aed, #f472b6);
+    color: #fff; cursor: pointer; letter-spacing: .5px;
+    box-shadow: 0 4px 24px #7c3aed60;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .play-btn:active { transform: scale(0.97); }
+
+  /* ── GAME SCREEN ── */
+  #gameScreen { gap: 0; padding: 0; max-width: 420px; width: 100%; }
+
+  .hud {
+    width: 100%; background: #0d0222cc; padding: 8px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hud-score { text-align: center; }
+  .hud-label { color: var(--muted); font-size: 9px; letter-spacing: .5px; }
+  .hud-value { font-family: 'Fredoka One', cursive; font-size: 22px; color: var(--candy2); }
+  .hud-player { display: flex; align-items: center; gap: 6px; }
+  .hud-snake { width: 32px; height: 32px; object-fit: contain; }
+  .hud-name { font-size: 11px; font-weight: 700; color: var(--text); }
+
+  #gameCanvas {
+    display: block;
+    background: #06010f;
+    touch-action: none;
+  }
+
+  .controls-bar {
+    width: 100%; background: #0d0222cc; padding: 8px 12px;
+    display: flex; gap: 8px; align-items: center; justify-content: center;
+    border-top: 1px solid var(--border);
+  }
+  .ctrl-btn {
+    background: #1a0a38; border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 11px; padding: 6px 12px; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-weight: 700;
+  }
+  .power-slot {
+    background: #1a0a38; border: 1px solid var(--border); border-radius: 10px;
+    padding: 5px 10px; font-size: 14px; display: flex; align-items: center; gap: 4px;
+  }
+  .power-slot span { color: var(--muted); font-size: 9px; }
+
+  /* ── GAME OVER ── */
+  #gameOverScreen {
+    text-align: center; gap: 14px;
+  }
+  .go-title {
+    font-family: 'Fredoka One', cursive; font-size: 42px;
+    filter: drop-shadow(0 0 20px currentColor);
+  }
+  .go-title.win { color: #facc15; }
+  .go-title.lose { color: #f472b6; }
+  .go-snake { width: 120px; height: 120px; object-fit: contain; }
+  .go-score { font-family: 'Fredoka One', cursive; font-size: 28px; color: var(--text); }
+  .go-sub { color: var(--muted); font-size: 12px; }
+  .go-btn {
+    padding: 12px 32px; border: none; border-radius: 12px;
+    font-family: 'Fredoka One', cursive; font-size: 18px;
+    background: linear-gradient(135deg, #7c3aed, #f472b6);
+    color: #fff; cursor: pointer;
+  }
+
+  /* swipe indicator */
+  .swipe-hint {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: rgba(124,58,237,.8); color: #f5f3ff; font-size: 11px;
+    padding: 4px 14px; border-radius: 20px; pointer-events: none;
+    animation: fadeOut 3s forwards;
+  }
+  @keyframes fadeOut { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- SELECT SCREEN -->
+<div class="screen active" id="selectScreen">
+  <div class="game-title">Sugar Rush Snake</div>
+  <div class="game-sub">🍬 ELIGE TU SERPIENTE Y COMPITE 🍬</div>
+
+  <div class="species-carousel" id="spCarousel"></div>
+  <div class="selected-preview" id="spPreview"></div>
+
+  <div class="name-row">
+    <input class="name-input" id="nameInput" placeholder="Tu nombre..." maxlength="12" value="Jugador">
+  </div>
+
+  <button class="play-btn" onclick="startGame()">🐍 ¡JUGAR!</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="gameScreen">
+  <div class="hud">
+    <div class="hud-player">
+      <img class="hud-snake" id="hudSnakeImg" src="" alt="">
+      <div>
+        <div class="hud-name" id="hudName">Jugador</div>
+        <div class="hud-label">Tamaño: <span id="hudSize">1</span></div>
+      </div>
+    </div>
+    <div class="hud-score">
+      <div class="hud-label">PUNTOS</div>
+      <div class="hud-value" id="hudScore">0</div>
+    </div>
+    <div class="hud-player">
+      <div>
+        <div class="hud-name">NIVEL</div>
+        <div class="hud-label" id="hudLevel">1</div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div class="controls-bar">
+    <div class="power-slot">🍭<span>x0</span></div>
+    <div class="power-slot">❄️<span>LISTO</span></div>
+    <div class="power-slot">⚡<span>x0</span></div>
+    <button class="ctrl-btn" onclick="pauseGame()">⏸</button>
+    <button class="ctrl-btn" onclick="goToSelect()">🏠</button>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="screen" id="gameOverScreen">
+  <div class="go-title" id="goTitle">¡GANASTE!</div>
+  <img class="go-snake" id="goSnakeImg" src="" alt="">
+  <div class="go-score" id="goScore">0 puntos</div>
+  <div class="go-sub" id="goSub">Tamaño máximo alcanzado: 1</div>
+  <button class="go-btn" onclick="startGame()">🔄 Jugar de nuevo</button>
+  <button class="go-btn" style="background:#1a0a38;color:#a855f7;margin-top:-6px;" onclick="goToSelect()">← Cambiar serpiente</button>
+</div>
+
+<script>
+// ─── SPECIES DATA ───
+const SPECIES = [
+  { name:'Cobra Azul',   arch:'Cazadora',   glow:'#1a8fe3', stats:{vel:75,res:50,atk:70,pts:60},
+    img:'ChatGPT_Image_30_abr_2026__10_03_11_p_m_.png', emoji:'🔵' },
+  { name:'Víbora Rosa',  arch:'Agresiva',   glow:'#ec4899', stats:{vel:85,res:35,atk:90,pts:55},
+    img:'ChatGPT_Image_30_abr_2026__10_04_02_p_m_.png', emoji:'🩷' },
+  { name:'Boa Esmeralda',arch:'Tanque',     glow:'#22c55e', stats:{vel:40,res:90,atk:65,pts:50},
+    img:'ChatGPT_Image_30_abr_2026__10_05_08_p_m_.png', emoji:'🟢' },
+  { name:'Pitón Fuego',  arch:'Tanque Máx', glow:'#f97316', stats:{vel:30,res:98,atk:70,pts:45},
+    img:'ChatGPT_Image_30_abr_2026__10_06_32_p_m_.png', emoji:'🟠' },
+  { name:'Serpiente Mar',arch:'Gourmand',   glow:'#06b6d4', stats:{vel:90,res:40,atk:50,pts:85},
+    img:'ChatGPT_Image_30_abr_2026__10_08_30_p_m_.png', emoji:'🩵' },
+  { name:'Mamba Púrpura',arch:'Sombra',     glow:'#a855f7', stats:{vel:80,res:55,atk:75,pts:65},
+    img:'ChatGPT_Image_30_abr_2026__10_08_30_p_m_.png', emoji:'🟣' },
+  { name:'Cobra Negra',  arch:'Élite',      glow:'#6b7280', stats:{vel:85,res:80,atk:95,pts:80},
+    img:null, emoji:'⚫' },
+  { name:'Arcoíris',     arch:'Legendaria', glow:'#f0abfc', stats:{vel:95,res:95,atk:95,pts:95},
+    img:null, emoji:'🌈' },
+];
+
+const IMG_BASE = '/mnt/user-data/uploads/';
+const snakeImgs = {};
+SPECIES.forEach((sp,i)=>{
+  if(sp.img){
+    const im = new Image();
+    im.src = IMG_BASE + sp.img;
+    snakeImgs[i] = im;
+  }
+});
+
+let selSp = 0;
+
+// ─── SELECT SCREEN ───
+function buildSelect(){
+  const carousel = document.getElementById('spCarousel');
+  carousel.innerHTML = SPECIES.map((sp,i)=>`
+    <div class="sp-thumb ${i===selSp?'active':''}" onclick="selectSp(${i})" style="${i===selSp?'border-color:'+sp.glow:''}">
+      ${sp.img ? `<img src="${IMG_BASE+sp.img}" alt="${sp.name}">` : `<div class="sp-emoji">${sp.emoji}</div>`}
+    </div>
+  `).join('');
+
+  const sp = SPECIES[selSp];
+  const preview = document.getElementById('spPreview');
+  preview.innerHTML = `
+    ${sp.img ? `<img class="preview-img" src="${IMG_BASE+sp.img}" alt="${sp.name}" style="filter:drop-shadow(0 0 12px ${sp.glow})">` : `<div style="font-size:60px;width:90px;text-align:center;">${sp.emoji}</div>`}
+    <div class="preview-info">
+      <div class="preview-name" style="color:${sp.glow}">${sp.name}</div>
+      <div class="preview-arch">${sp.arch}</div>
+      <div class="mini-stats">
+        ${Object.entries(sp.stats).map(([k,v])=>`
+          <div><label>${k.toUpperCase()}</label>
+          <div class="mini-bar"><div class="mini-fill" style="width:${v}%;background:${sp.glow}"></div></div></div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function selectSp(i){ selSp=i; buildSelect(); }
+buildSelect();
+
+// ─── GAME ENGINE ───
+const CELL = 18;
+let canvas, ctx, W, H, COLS, ROWS;
+let snake, dir, nextDir, foods, powerups, score, gameLoop, paused, dead, level, frameCount;
+let playerName = 'Jugador';
+
+const CANDY_TYPES = [
+  { emoji:'🍬', pts:2,  freq:0.55, color:'#f472b6' },
+  { emoji:'🍭', pts:8,  freq:0.30, color:'#a855f7' },
+  { emoji:'🧁', pts:20, freq:0.12, color:'#facc15' },
+  { emoji:'💎', pts:50, freq:0.03, color:'#67e8f9' },
+];
+
+const POWERUP_TYPES = [
+  { emoji:'❄️', label:'Congela IA' },
+  { emoji:'⚡', label:'Turbo' },
+  { emoji:'💣', label:'Bomba' },
+];
+
+function startGame(){
+  playerName = document.getElementById('nameInput').value.trim() || 'Jugador';
+  showScreen('gameScreen');
+
+  canvas = document.getElementById('gameCanvas');
+  const maxW = Math.min(window.innerWidth, 420);
+  const maxH = window.innerHeight - 120;
+  COLS = Math.floor(maxW / CELL);
+  ROWS = Math.floor(maxH / CELL);
+  W = COLS * CELL; H = ROWS * CELL;
+  canvas.width = W; canvas.height = H;
+  ctx = canvas.getContext('2d');
+
+  // HUD
+  const sp = SPECIES[selSp];
+  document.getElementById('hudName').textContent = playerName;
+  const hi = document.getElementById('hudSnakeImg');
+  if(sp.img){ hi.src = IMG_BASE+sp.img; hi.style.display='block'; }
+  else { hi.style.display='none'; }
+
+  // init snake in center
+  const cx = Math.floor(COLS/2), cy = Math.floor(ROWS/2);
+  snake = [{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
+  dir = {x:1,y:0}; nextDir = {x:1,y:0};
+  foods = []; powerups = [];
+  score = 0; level = 1; frameCount = 0; paused = false; dead = false;
+
+  spawnFoods(5);
+  setupSwipe();
+  setupKeys();
+
+  clearInterval(gameLoop);
+  const sp2 = SPECIES[selSp];
+  const baseSpeed = 150 - (sp2.stats.vel * 0.8);
+  gameLoop = setInterval(tick, Math.max(80, baseSpeed));
+
+  // hint
+  const hint = document.createElement('div');
+  hint.className = 'swipe-hint';
+  hint.textContent = '👆 Desliza para moverte';
+  document.body.appendChild(hint);
+  setTimeout(()=>hint.remove(), 3000);
+}
+
+function spawnFoods(n){
+  for(let i=0;i<n;i++){
+    let pos;
+    do { pos = {x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)}; }
+    while(snake.some(s=>s.x===pos.x&&s.y===pos.y) || foods.some(f=>f.x===pos.x&&f.y===pos.y));
+    const r = Math.random();
+    let cum = 0, type = CANDY_TYPES[0];
+    for(const t of CANDY_TYPES){ cum+=t.freq; if(r<cum){type=t;break;} }
+    foods.push({...pos, ...type});
+  }
+  // maybe spawn powerup
+  if(Math.random() < 0.3 && powerups.length < 2){
+    let pos;
+    do { pos = {x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)}; }
+    while(snake.some(s=>s.x===pos.x&&s.y===pos.y));
+    const pu = POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];
+    powerups.push({...pos, ...pu, life:200});
+  }
+}
+
+function tick(){
+  if(paused||dead) return;
+  frameCount++;
+  dir = {...nextDir};
+
+  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+  // wall wrap
+  head.x = (head.x + COLS) % COLS;
+  head.y = (head.y + ROWS) % ROWS;
+
+  // self collision (skip first 5 segs)
+  if(snake.slice(4).some(s=>s.x===head.x&&s.y===head.y)){
+    endGame(false); return;
+  }
+
+  snake.unshift(head);
+
+  // eat food
+  const fi = foods.findIndex(f=>f.x===head.x&&f.y===head.y);
+  if(fi>=0){
+    const f = foods.splice(fi,1)[0];
+    score += f.pts * (1 + (level-1)*0.1);
+    score = Math.round(score);
+    // grow: already grew by not popping
+    spawnFoods(1);
+  } else {
+    snake.pop();
+  }
+
+  // eat powerup
+  const pi = powerups.findIndex(p=>p.x===head.x&&p.y===head.y);
+  if(pi>=0){ powerups.splice(pi,1); score += 15; }
+
+  // age powerups
+  powerups.forEach(p=>p.life--);
+  powerups = powerups.filter(p=>p.life>0);
+
+  // level up
+  if(snake.length > 5 + level*3) level++;
+
+  updateHUD();
+  draw();
+}
+
+function updateHUD(){
+  document.getElementById('hudScore').textContent = score;
+  document.getElementById('hudSize').textContent = snake.length;
+  document.getElementById('hudLevel').textContent = level;
+}
+
+function draw(){
+  ctx.fillStyle = '#06010f';
+  ctx.fillRect(0,0,W,H);
+
+  // grid
+  ctx.strokeStyle = 'rgba(124,58,237,0.06)';
+  ctx.lineWidth = 0.5;
+  for(let x=0;x<=COLS;x++){ ctx.beginPath();ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,H);ctx.stroke(); }
+  for(let y=0;y<=ROWS;y++){ ctx.beginPath();ctx.moveTo(0,y*CELL);ctx.lineTo(W,y*CELL);ctx.stroke(); }
+
+  // foods
+  foods.forEach(f=>{
+    ctx.font = `${CELL-2}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(f.emoji, f.x*CELL+CELL/2, f.y*CELL+CELL/2);
+    // glow ring for rare
+    if(f.pts >= 20){
+      ctx.beginPath();
+      ctx.arc(f.x*CELL+CELL/2, f.y*CELL+CELL/2, CELL*0.6, 0, Math.PI*2);
+      ctx.strokeStyle = f.color;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.4 + 0.3*Math.sin(frameCount*0.15);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  });
+
+  // powerups
+  powerups.forEach(p=>{
+    ctx.font = `${CELL}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.6 + 0.4*(p.life/200);
+    ctx.fillText(p.emoji, p.x*CELL+CELL/2, p.y*CELL+CELL/2);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(p.x*CELL+1, p.y*CELL+1, CELL-2, CELL-2);
+  });
+
+  // snake body
+  const sp = SPECIES[selSp];
+  snake.forEach((seg, i) => {
+    const frac = i / snake.length;
+    const alpha = 1 - frac * 0.3;
+    ctx.globalAlpha = alpha;
+
+    if(i === 0 && snakeImgs[selSp] && snakeImgs[selSp].complete) {
+      // head: draw sprite
+      ctx.save();
+      ctx.translate(seg.x*CELL + CELL/2, seg.y*CELL + CELL/2);
+      const angle = Math.atan2(dir.y, dir.x);
+      ctx.rotate(angle);
+      const hs = CELL * 1.6;
+      ctx.drawImage(snakeImgs[selSp], -hs/2, -hs/2, hs, hs);
+      ctx.restore();
+    } else {
+      // body segment
+      const r = CELL * 0.42;
+      ctx.fillStyle = i === 0 ? sp.glow : (i%2===0 ? sp.glow+'cc' : sp.glow+'88');
+      ctx.beginPath();
+      ctx.roundRect(seg.x*CELL+1, seg.y*CELL+1, CELL-2, CELL-2, r);
+      ctx.fill();
+      // scale shine
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.ellipse(seg.x*CELL+CELL*0.35, seg.y*CELL+CELL*0.35, CELL*0.18, CELL*0.12, -0.5, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  });
+
+  // score popup effect
+  if(frameCount % 40 === 0 && score > 0){
+    ctx.font = '700 11px Nunito';
+    ctx.fillStyle = '#facc15';
+    ctx.textAlign = 'left';
+  }
+}
+
+function endGame(won){
+  dead = true;
+  clearInterval(gameLoop);
+  const sp = SPECIES[selSp];
+  document.getElementById('goTitle').textContent = won ? '🏆 ¡GANASTE!' : '💀 GAME OVER';
+  document.getElementById('goTitle').className = 'go-title ' + (won?'win':'lose');
+  document.getElementById('goScore').textContent = score + ' puntos';
+  document.getElementById('goSub').textContent = 'Tamaño máximo: ' + snake.length + ' | Nivel ' + level;
+  const gi = document.getElementById('goSnakeImg');
+  if(sp.img){ gi.src=IMG_BASE+sp.img; gi.style.display='block'; }
+  else{ gi.style.display='none'; }
+  showScreen('gameOverScreen');
+}
+
+function pauseGame(){
+  paused = !paused;
+}
+
+function goToSelect(){
+  clearInterval(gameLoop);
+  showScreen('selectScreen');
+  buildSelect();
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── SWIPE CONTROLS ───
+let touchStart = null;
+function setupSwipe(){
+  canvas.addEventListener('touchstart', e=>{ e.preventDefault(); touchStart={x:e.touches[0].clientX, y:e.touches[0].clientY}; }, {passive:false});
+  canvas.addEventListener('touchend', e=>{
+    if(!touchStart) return;
+    const dx = e.changedTouches[0].clientX - touchStart.x;
+    const dy = e.changedTouches[0].clientY - touchStart.y;
+    if(Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if(Math.abs(dx) > Math.abs(dy)){
+      if(dx > 0 && dir.x !== -1) nextDir = {x:1,y:0};
+      else if(dx < 0 && dir.x !== 1) nextDir = {x:-1,y:0};
+    } else {
+      if(dy > 0 && dir.y !== -1) nextDir = {x:0,y:1};
+      else if(dy < 0 && dir.y !== 1) nextDir = {x:0,y:-1};
+    }
+    touchStart = null;
+  }, {passive:false});
+}
+
+function setupKeys(){
+  document.onkeydown = e => {
+    if(e.key==='ArrowUp'&&dir.y!==1) nextDir={x:0,y:-1};
+    else if(e.key==='ArrowDown'&&dir.y!==-1) nextDir={x:0,y:1};
+    else if(e.key==='ArrowLeft'&&dir.x!==1) nextDir={x:-1,y:0};
+    else if(e.key==='ArrowRight'&&dir.x!==-1) nextDir={x:1,y:0};
+    else if(e.key===' ') pauseGame();
+  };
+}
+</script>
+</body>
+</html>
