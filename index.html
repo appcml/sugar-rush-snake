@@ -230,24 +230,28 @@
 // ─── SPECIES DATA ───
 const SPECIES = [
   { name:'Cobra Azul',   arch:'Cazadora',   glow:'#1a8fe3', stats:{vel:75,res:50,atk:70,pts:60},
-    img:'ChatGPT_Image_30_abr_2026__10_03_11_p_m_.png', emoji:'🔵' },
+    img:'cobra-azul.png', emoji:'🔵' },
   { name:'Víbora Rosa',  arch:'Agresiva',   glow:'#ec4899', stats:{vel:85,res:35,atk:90,pts:55},
-    img:'ChatGPT_Image_30_abr_2026__10_04_02_p_m_.png', emoji:'🩷' },
+    img:'vibora-rosa.png', emoji:'🩷' },
   { name:'Boa Esmeralda',arch:'Tanque',     glow:'#22c55e', stats:{vel:40,res:90,atk:65,pts:50},
-    img:'ChatGPT_Image_30_abr_2026__10_05_08_p_m_.png', emoji:'🟢' },
+    img:'boa-esmeralda.png', emoji:'🟢' },
   { name:'Pitón Fuego',  arch:'Tanque Máx', glow:'#f97316', stats:{vel:30,res:98,atk:70,pts:45},
-    img:'ChatGPT_Image_30_abr_2026__10_06_32_p_m_.png', emoji:'🟠' },
+    img:'piton-fuego.png', emoji:'🟠' },
   { name:'Serpiente Mar',arch:'Gourmand',   glow:'#06b6d4', stats:{vel:90,res:40,atk:50,pts:85},
-    img:'ChatGPT_Image_30_abr_2026__10_08_30_p_m_.png', emoji:'🩵' },
+    img:'serpiente-mar.png', emoji:'🩵' },
   { name:'Mamba Púrpura',arch:'Sombra',     glow:'#a855f7', stats:{vel:80,res:55,atk:75,pts:65},
-    img:'ChatGPT_Image_30_abr_2026__10_08_30_p_m_.png', emoji:'🟣' },
+    img:'mamba-purpura.png', emoji:'🟣' },
   { name:'Cobra Negra',  arch:'Élite',      glow:'#6b7280', stats:{vel:85,res:80,atk:95,pts:80},
-    img:null, emoji:'⚫' },
+    img:'cobra-negra.png', emoji:'⚫' },
+  { name:'Víbora Roja',  arch:'Épica',      glow:'#ef4444', stats:{vel:88,res:70,atk:92,pts:75},
+    img:'vibora-roja.png', emoji:'🔴' },
+  { name:'Pitón Dorada', arch:'Premium',    glow:'#facc15', stats:{vel:60,res:95,atk:80,pts:90},
+    img:'piton-dorada.png', emoji:'🟡' },
   { name:'Arcoíris',     arch:'Legendaria', glow:'#f0abfc', stats:{vel:95,res:95,atk:95,pts:95},
-    img:null, emoji:'🌈' },
+    img:'arcoiris.png', emoji:'🌈' },
 ];
 
-const IMG_BASE = '/mnt/user-data/uploads/';
+const IMG_BASE = 'assets/snakes/';
 const snakeImgs = {};
 SPECIES.forEach((sp,i)=>{
   if(sp.img){
