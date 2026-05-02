@@ -240,14 +240,7 @@ const SPECIES = [
   { name:'Boa Esmeralda',arch:'Tanque',     glow:'#22c55e', stats:{vel:40,res:90,atk:65,pts:50},
     img:'boa-esmeralda.png', emoji:'🟢', parts:null },
   { name:'Cobra Negra',  arch:'Élite',      glow:'#e97316', stats:{vel:85,res:80,atk:95,pts:80},
-    img:'cobra-negra.png', emoji:'⚫',
-    parts:{
-      head:'parts/cobra-negra-head.png',
-      body:'parts/cobra-negra-body.png',
-      turn:'parts/cobra-negra-turn.png',
-      tail:'parts/cobra-negra-tail.png'
-    }
-  },
+    img:'cobra-negra.png', emoji:'⚫', parts:'cobra-negra' },
   { name:'Víbora Roja',  arch:'Épica',      glow:'#ef4444', stats:{vel:88,res:70,atk:92,pts:75},
     img:'vibora-roja.png', emoji:'🔴', parts:null },
   { name:'Pitón Dorada', arch:'Premium',    glow:'#facc15', stats:{vel:60,res:95,atk:80,pts:90},
@@ -267,10 +260,11 @@ SPECIES.forEach((sp,i)=>{
     snakeImgs[i] = im;
   }
   if(sp.parts){
+    const base = sp.parts; // e.g. 'cobra-negra'
     snakeParts[i] = {};
-    Object.entries(sp.parts).forEach(([key,path])=>{
+    ['head','body','turn','tail'].forEach(key=>{
       const im = new Image();
-      im.src = IMG_BASE + path;
+      im.src = IMG_BASE + 'parts/' + base + '-' + key + '.png';
       snakeParts[i][key] = im;
     });
   }
