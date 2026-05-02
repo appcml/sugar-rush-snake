@@ -20,7 +20,8 @@
     --muted: #4c1d95;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  canvas { touch-action: none; }
 
   body {
     background: var(--bg);
@@ -39,7 +40,7 @@
   .screen.active { display: flex; }
 
   /* ── SELECT SCREEN ── */
-  #selectScreen { gap: 10px; }
+  #selectScreen { gap: 10px; touch-action: pan-y; }
 
   .game-title {
     font-family: 'Fredoka One', cursive;
@@ -54,18 +55,20 @@
 
   .game-sub { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-align: center; margin-bottom: 6px; }
 
-  .species-carousel { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 4px 0 6px; scrollbar-width: none; }
+  .species-carousel { display: flex; gap: 8px; overflow-x: scroll; width: 100%; padding: 4px 0 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; touch-action: pan-x; }
   .species-carousel::-webkit-scrollbar { display: none; }
 
   .sp-thumb {
-    flex: 0 0 64px; height: 64px; border-radius: 14px;
+    flex: 0 0 68px; width: 68px; height: 68px; border-radius: 14px;
     border: 2px solid var(--border); background: var(--panel);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: all .15s; position: relative; overflow: hidden;
+    scroll-snap-align: start; -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
   }
-  .sp-thumb.active { border-color: var(--purple-light); transform: scale(1.1); }
-  .sp-thumb img { width: 56px; height: 56px; object-fit: contain; }
-  .sp-thumb .sp-emoji { font-size: 28px; }
+  .sp-thumb.active { transform: scale(1.08); }
+  .sp-thumb img { width: 62px; height: 62px; object-fit: contain; display: block; }
+  .sp-emoji { font-size: 26px; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
   .selected-preview {
     width: 100%; background: var(--panel); border-radius: 18px;
@@ -250,8 +253,19 @@ const SPECIES = [
 ];
 
 const IMG_BASE = 'assets/snakes/';
+
+// Debug: log which images fail to load
+function debugImg(src, name) {
+  const im = new Image();
+  im.onload = () => console.log('✅ Loaded:', name);
+  im.onerror = () => console.error('❌ Failed:', name, src);
+  im.src = src;
+}
 const snakeImgs = {};
 const snakeParts = {}; // {head, body, turn, tail} images per species
+
+// Debug all images
+SPECIES.forEach(sp => { if(sp.img) debugImg(IMG_BASE + sp.img, sp.name); });
 
 SPECIES.forEach((sp,i)=>{
   if(sp.img){
@@ -275,11 +289,18 @@ let selSp = 0;
 // ─── SELECT SCREEN ───
 function buildSelect(){
   const carousel = document.getElementById('spCarousel');
-  carousel.innerHTML = SPECIES.map((sp,i)=>`
-    <div class="sp-thumb ${i===selSp?'active':''}" onclick="selectSp(${i})" style="${i===selSp?'border-color:'+sp.glow:''}">
-      ${sp.img ? `<img src="${IMG_BASE+sp.img}" alt="${sp.name}">` : `<div class="sp-emoji">${sp.emoji}</div>`}
-    </div>
-  `).join('');
+  carousel.innerHTML = SPECIES.map((sp,i)=>{
+    const isActive = i===selSp;
+    const border = isActive ? sp.glow : '#1e0a38';
+    const imgSrc = IMG_BASE + sp.img;
+    const thumb = sp.img
+      ? '<img src="' + imgSrc + '" alt="' + sp.name + '" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.sp-emoji\').style.display=\'flex\'">'
+      : '';
+    return '<div class="sp-thumb ' + (isActive?'active':'') + '" onclick="selectSp(' + i + ')" style="border-color:' + border + ';flex-shrink:0">'
+      + thumb
+      + '<div class="sp-emoji" style="display:' + (sp.img?'none':'flex') + '">' + sp.emoji + '</div>'
+      + '</div>';
+  }).join('');
 
   const sp = SPECIES[selSp];
   const preview = document.getElementById('spPreview');
